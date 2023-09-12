@@ -11,6 +11,14 @@ module.exports = (err, req, res, next) => {
 
     });
   } else {
+if(err.message.includes("Unexpected end of form")){
+  return res.status(400).json({
+    message: "Please fill a form",
+    status: "fail",
+    statusCode:500,
+  });
+}
+    console.log(err.message);
     logger.error(`on path ${req.originalUrl} with method ${req.method}\n ${err.message}`);
     logger.error(err.stack);
     return res.status(500).json({

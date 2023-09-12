@@ -9,7 +9,7 @@ const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
 const compression = require('compression');
 const cors = require('cors');
-
+const doctorRoute = require('./routes/doctorRoutes')
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
 
@@ -60,12 +60,11 @@ app.use(xss());
 app.use(
   hpp({
     whitelist: [
-      'duration',
-      'ratingsQuantity',
-      'ratingsAverage',
-      'maxGroupSize',
-      'difficulty',
-      'price'
+      'limit',
+      'query',
+      'orderBy',
+      'sortBy',
+      'page'
     ]
   })
 );
@@ -79,7 +78,7 @@ app.use((req, res, next) => {
 });
 
 // 3) ROUTES
-
+app.use("/doctors",doctorRoute)
 
 
 
