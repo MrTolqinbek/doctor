@@ -1,48 +1,27 @@
-import knex from '../db/db.js'
+const knex = require("../db/db");
 knex.schema
-  // .dropTableIfExists('users').createTable('users', (table) => {
-  //   table.increments('id').primary();
-  //   table.string('name');
-  //   table.integer('telegram_id').unique();
-  //   table.timestamps(false, true);
-  //   table.integer('status').defaultTo(1);
-  //   table.boolean('is_admin').defaultTo(false);
-  // })
-  // .dropTableIfExists('channels')
-  // .createTable('channels', (table) => {
-  //   table.increments('id').primary();
-  //   table.integer('chat_id');
-  //   table.timestamps(false, true);
-  // })
-  // .dropTableIfExists('questions')
-  // .createTable('questions', (table) => {
-  //   table.increments('id').primary();
-  //   table.string('question');
-  //   table.string('answer');
-  //   table.timestamps(false, true);
-  // })
-  .dropTableIfExists('subscriptions')
-  .createTable('subscriptions', (table) => {
-    table.increments('id').primary();
-    table.integer('user').references('id').inTable('users');
-    table.integer('signal').references('id').inTable('signals');
-    table.boolean('is_active').defaultTo(false);
-    table.date('activated_at').defaultTo(null);
-    table.timestamps(false, true);
+  .dropTableIfExists("doctors")
+  .createTable("doctors", (table) => {
+    table.increments("id").primary();
+    table.string("first_name").notNullable();
+    table.string("last_name").notNullable();
+    table.string("middle_name").notNullable();
+    table.float("longitude").notNullable();
+    table.float("latitude").notNullable();
+    table.date("start_date").notNullable();
+    table.date("end_date").notNullable();
+    table.integer("age").notNullable();
+    table.string("gender").notNullable();
+    table.string("position").notNullable();
+    table.string("image").nullable();
+    table.timestamp("created_at").defaultTo(knex.fn.now());
+    table.timestamp("updated_at").defaultTo(knex.fn.now());
   })
-  // .dropTableIfExists('signals')
-  // .createTable('signals', (table) => {
-  //   table.increments('id').primary();
-  //   table.string('name');
-  //   table.integer('price');
-  //   table.integer('duration')
-  //   table.timestamps(false, true);
-  // })
   .then(() => {
-    console.log('Tables created successfully');
+    console.log("Tables created successfully");
     knex.destroy();
   })
   .catch((error) => {
-    console.error('Error creating tables:', error);
+    console.error("Error creating tables:", error);
     knex.destroy();
   });
