@@ -1,0 +1,20 @@
+{
+  "name": "doctor",
+  "version": "1.0.0",
+  "description": "Doctor",
+  "main": "server.js",
+  "scripts": {
+    "test": "npm run test",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MrTolqinbek/doctor.git"
+  },
+  "author": "MrTolqinbek",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MrTolqinbek/doctor/issues"
+  },
+  "homepage": "https://github.com/MrTolqinbek/doctor#readme"
+}
