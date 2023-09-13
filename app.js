@@ -12,9 +12,11 @@ const cors = require('cors');
 const doctorRoute = require('./routes/doctorRoutes')
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
+const JSdoc = require("swagger-jsdoc")
+const swaggerUi = require("swagger-ui-express");
 
-
-
+const options = require("./swagger.js");
+const specs = JSdoc(options);
 // Start express app
 const app = express();
 
@@ -78,10 +80,10 @@ app.use((req, res, next) => {
 });
 
 // 3) ROUTES
-app.use("/doctors",doctorRoute)
+app.use("/api/doctors",doctorRoute)
 
-
-
+// 4) Swagger
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
 app.all('*', (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));

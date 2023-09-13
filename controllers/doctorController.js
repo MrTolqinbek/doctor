@@ -3,25 +3,28 @@ const sharp = require("sharp");
 const catchAsync = require("./../utils/catchAsync");
 const AppError = require("./../utils/appError");
 const knex = require("../db/db");
-const fs = require("fs/promises")
-const { doctorGetSchema, doctorGetByIdSchema, doctorCreateSchema } = require("../models/doctors");
+const fs = require("fs/promises");
+const {
+  doctorGetSchema,
+  doctorGetByIdSchema,
+  doctorCreateSchema,
+} = require("../models/doctors");
 const { defaultLimit } = require("../config");
 
 const multerStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, './public/img/doctors');
+    cb(null, "./public/img/doctors");
   },
   filename: (req, file, cb) => {
-    if(!file){
+    if (!file) {
       cb(new AppError("Please upload an image", 400), false);
     }
-    const ext = file.mimetype.split('/')[1];
-    const name = `user-${req.params.id}-${Date.now()}.${ext}`
-    req.dest = name
+    const ext = file.mimetype.split("/")[1];
+    const name = `user-${req.params.id}-${Date.now()}.${ext}`;
+    req.dest = name;
     cb(null, name);
-  }
+  },
 });
-
 
 const multerFilter = (req, file, cb) => {
   if (file.mimetype.startsWith("image")) {
@@ -35,25 +38,24 @@ const upload = multer({
   storage: multerStorage,
   fileFilter: multerFilter,
 });
-exports.isImage = catchAsync(async (req,res,next) => {
-    if (req.file) return next();
+exports.isImage = catchAsync(async (req, res, next) => {
+  if (req.file) return next();
 
-    throw new AppError("File not Found",400)
-
-})
+  throw new AppError("File not Found", 400);
+});
 exports.uploadUserPhoto = upload.single("image");
 exports.params = catchAsync(async (req, res, next) => {
-    const result = doctorGetByIdSchema.validate(req.params.id);
-    if (result.error) {
-      throw new AppError(result.error.message, 400);
-    }
-    const doctors = await knex("doctors").where("id", result.value).first();
-     if(!doctors){
-        throw AppError("Doctor with id "+result.value + " not found",404)
-     }
-    next()
-  });
-  
+  const result = doctorGetByIdSchema.validate(req.params.id);
+  if (result.error) {
+    throw new AppError(result.error.message, 400);
+  }
+  const doctors = await knex("doctors").where("id", result.value).first();
+  if (!doctors) {
+    throw new AppError("Doctor with id " + result.value + " not found", 404);
+  }
+  next();
+});
+
 exports.resizeUserPhoto = catchAsync(async (req, res, next) => {
   if (!req.file) return next();
 
@@ -82,11 +84,11 @@ exports.getDoctors = catchAsync(async (req, res, next) => {
       table.orWhere("last_name", "like", `%${result.value.query}%`);
       table.orWhere("middle_name", "like", `%${result.value.query}%`);
     });
-    doctors2.where((table)=>{
-        table.orWhere("first_name", "like", `%${result.value.query}%`);
-    table.orWhere("last_name", "like", `%${result.value.query}%`);
-    table.orWhere("middle_name", "like", `%${result.value.query}%`);
-    })
+    doctors2.where((table) => {
+      table.orWhere("first_name", "like", `%${result.value.query}%`);
+      table.orWhere("last_name", "like", `%${result.value.query}%`);
+      table.orWhere("middle_name", "like", `%${result.value.query}%`);
+    });
   }
   if (!result.value.limit) {
     result.value.limit = defaultLimit;
@@ -103,7 +105,21 @@ exports.getDoctors = catchAsync(async (req, res, next) => {
   if (!result.value.sortBy) {
     result.value.sortBy = "id";
   }
-  doctors.select("first_name","last_name","longitude","latitude","age","position")
+  doctors.select({
+    "id":"id",
+    "first_name":"first_name",
+    "last_name":"last_name",
+    "gender":"gender",
+    "position":"position",
+    "age":"age",
+    "gender":"gender",
+    "middle_name":"middle_name",
+    "longitude":"longitude",
+    "latitude":"latitude",
+    "start_time":"start_time",
+    "end_time":"end_time",
+    "image":knex.raw('COALESCE("image", \'default.jpg\')')
+});
   doctors = doctors.orderBy(result.value.sortBy, result.value.orderBy);
   doctors = await doctors;
   doctors2 = await doctors2.count("id as count").first();
@@ -118,81 +134,99 @@ exports.getDoctors = catchAsync(async (req, res, next) => {
   });
 });
 
-
 exports.getDoctor = catchAsync(async (req, res, next) => {
-    const result = doctorGetByIdSchema.validate(req.params.id);
-    if (result.error) {
-      throw new AppError(result.error.message, 400);
-    }
+  const result = doctorGetByIdSchema.validate(req.params.id);
+  if (result.error) {
+    throw new AppError(result.error.message, 400);
+  }
   
-    const doctors = await knex("doctors").where("id", result.value).first();
-     if(!doctors){
-        throw AppError("Doctor with id "+result.value + " not found",404)
-     }
-    return res.status(200).json({
-      status: 200,
-      data: {
-        doctor: doctors,
-      },
-    });
+  const doctors = await knex("doctors").where("id", result.value).select({
+    "id":"id",
+    "first_name":"first_name",
+    "last_name":"last_name",
+    "gender":"gender",
+    "position":"position",
+    "age":"age",
+    "gender":"gender",
+    "middle_name":"middle_name",
+    "longitude":"longitude",
+    "latitude":"latitude",
+    "start_time":"start_time",
+    "end_time":"end_time",
+    "image":knex.raw('COALESCE("image", \'default.jpg\')'),
+    "created_at":"created_at",
+    "updated_at":"updated_at"
+}).first();
+  if (!doctors) {
+    throw new AppError("Doctor with id " + result.value + " not found", 404);
+  }
+  return res.status(200).json({
+    status: 200,
+    data: {
+      doctor: doctors,
+    },
   });
-  
+});
 
 exports.createDoctor = catchAsync(async (req, res, next) => {
-    const result = doctorCreateSchema.validate(req.body);
-    if (result.error) {
-      throw new AppError(result.error.message, 400);
-    }
-  
-    const doctors = await knex("doctors").insert(result.value).returning("id")
-    return res.status(200).json({
-      status: 200,
-      data: {
-        doctor: doctors[0],
-      },
-    });
-  });
+  const result = doctorCreateSchema.validate(req.body);
+  if (result.error) {
+    throw new AppError(result.error.message, 400);
+  }
 
-  exports.updateDoctor = catchAsync(async (req, res, next) => {
-    const result1 = doctorGetByIdSchema.validate(req.params.id);
-    if (result1.error) {
-      throw new AppError(result1.error.message, 400);
-    }
-  
-    const doctors1 = await knex("doctors").where("id", result1.value).first();
-     if(!doctors1){
-        throw AppError("Doctor with id "+result1.value + " not found",404)
-     }
-    const result = doctorCreateSchema.validate(req.body);
-    if (result.error) {
-      throw new AppError(result.error.message, 400);
-    }
-  
-    const doctors = await knex("doctors").update(result.value).returning("id")
-    return res.status(200).json({
-      status: 200,
-      data: {
-        doctor: doctors[0],
-      },
-    });
+  const doctors = await knex("doctors").insert(result.value).returning("id");
+  return res.status(201).json({
+    status: 201,
+    data: {
+      doctor: doctors[0],
+    },
   });
+});
 
-  exports.uploadImage = catchAsync(async (req, res, next) => {
-    const doctors = await knex("doctors").where("id", req.params.id).first();
-    if (doctors.image) {
-      await fs.unlink("./public/img/doctors/"+doctors.image)
-    }
-    await knex("doctors").update({
-      image:req.dest
-    }).where("id", req.params.id)
+exports.updateDoctor = catchAsync(async (req, res, next) => {
+  const result1 = doctorGetByIdSchema.validate(req.params.id);
+  if (result1.error) {
+    throw new AppError(result1.error.message, 400);
+  }
 
-    return res.status(200).json({
-      status: 200,
-      data: {
-        doctor: {
-          image:req.dest
-        },
-      },
-    });
+  const doctors1 = await knex("doctors").where("id", result1.value).first();
+  if (!doctors1) {
+    throw new AppError("Doctor with id " + result1.value + " not found", 404);
+  }
+  const result = doctorCreateSchema.validate(req.body);
+  if (result.error) {
+    throw new AppError(result.error.message, 400);
+  }
+
+  const doctors = await knex("doctors").update(result.value).returning("id");
+  return res.status(203).json({
+    status: 203,
+    data: {
+      doctor: doctors[0],
+    },
   });
-  
+});
+
+exports.uploadImage = catchAsync(async (req, res, next) => {
+  if (!req.file) {
+    throw new AppError("Please upload an image", 400);
+  }
+  const doctors = await knex("doctors").where("id", req.params.id).first();
+  if (doctors.image) {
+    await fs.unlink("./public/img/doctors/" + doctors.image);
+  }
+  await knex("doctors")
+    .update({
+      image: req.dest,
+    })
+    .where("id", req.params.id);
+
+  return res.status(203).json({
+    status: 203,
+    data: {
+      doctor: {
+        image: req.dest,
+      },
+    },
+  });
+});

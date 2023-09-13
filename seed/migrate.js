@@ -8,8 +8,8 @@ knex.schema
     table.string("middle_name").notNullable();
     table.float("longitude").notNullable();
     table.float("latitude").notNullable();
-    table.date("start_date").notNullable();
-    table.date("end_date").notNullable();
+    table.float("start_time").notNullable();
+    table.float("end_time").notNullable();
     table.integer("age").notNullable();
     table.string("gender").notNullable();
     table.string("position").notNullable();
